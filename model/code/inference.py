@@ -44,7 +44,7 @@ def predict_fn(input_data, model):
 #     print('[DEBUG] pred:', pred, pred.xywhn)
 #     pred.print()
     
-    result = [{'boxes': predi.boxes.xywhn.cpu().numpy(), 'confs': predi.boxes.conf.cpu().numpy(), 'classes': predi.boxes.cls.cpu().numpy()} for predi in pred]
+    result = [{'boxes': predi.boxes.xywhn.cpu().tolist(), 'confs': predi.boxes.conf.cpu().tolist(), 'classes': predi.boxes.cls.cpu().tolist()} for predi in pred]
             
 #     print('[DEBUG] result:', result)
     

@@ -4,18 +4,44 @@ from ultralytics import YOLO
 from PIL import Image
 import cv2
 import numpy as np
+import torch
+from torchvision import transforms
 
-imgsz = 640
+
+imgsz = 224
 
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = 'cpu'
+trans = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
 
 
 def model_fn(model_dir):
     os.system('pip install smdebug')
     model = YOLO(os.path.join(model_dir, 'best.pt'))
+    seq_model = torch.nn.Sequential(*list(model.model.model[:-1]))
+    ClassifyModel = model.model.model[-1]
 #     model.to(device)
 #     model.eval()
-    return model
+    return seq_model, ClassifyModel
+
+
+def get_embedding(im, model):
+    seq_model, ClassifyModel = model
+    im_coverted = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    im = Image.fromarray(im_coverted)
+    im = trans(im)
+    im = im.unsqueeze_(dim=0)
+    im = im.to(device)
+    im = seq_model(im)
+    if isinstance(im, list):
+        x = torch.cat(im, 1)
+    embedding = ClassifyModel.pool(ClassifyModel.conv(im)).flatten(1)
+    embedding = embedding.cpu().tolist()[0]
+    return embedding
 
 
 def input_fn(request_body, request_content_type):
@@ -40,11 +66,11 @@ def predict_fn(input_data, model):
 #     print('[DEBUG] input_data type:', type(input_data), input_data.shape)
 #     with torch.no_grad():
 #         return model(input_data.to(device))
-    pred = model.predict(input_data)  # , size=imgsz
+    pred = get_embedding(input_data, model)  # , size=imgsz
 #     print('[DEBUG] pred:', pred, pred.xywhn)
 #     pred.print()
     
-    result = [{'probs': predi.probs.cpu().tolist()} for predi in pred]
+    result = pred
             
 #     print('[DEBUG] result:', result)
     
