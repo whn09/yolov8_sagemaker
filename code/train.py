@@ -63,7 +63,7 @@ def main(opt):
     model = YOLO(opt.weights)  # load a pretrained model (recommended for training)
 
     # Use the model
-    model.train(data=opt.data, epochs=opt.epochs, batch=opt.batch, imgsz=opt.imgsz, project=opt.project, name=opt.name)  # train the model
+    model.train(data=opt.data, epochs=opt.epochs, batch=opt.batch, imgsz=opt.imgsz, project=opt.project, name=opt.name, save_period=opt.save_period)  # train the model
 
 
 if __name__ == '__main__':
